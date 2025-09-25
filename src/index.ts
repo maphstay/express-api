@@ -7,4 +7,5 @@ const logger = new LoggerService();
 
 app.listen(PORT, () => {
   logger.info(`🚀 Server running on http://localhost:${PORT}`);
+  logger.info(`📑 Swagger docs on http://localhost:${PORT}/docs`);
 });
