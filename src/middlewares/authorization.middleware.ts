@@ -5,10 +5,10 @@ export const authorize = (allowedRoles: RoleEnum[]) => (req: Request, res: Respo
   try {
     const user = req.user as { role?: RoleEnum };
 
-    if (!user || !user.role || !allowedRoles.includes(user.role)) {
+    if (!user || !user?.role || !allowedRoles.includes(user?.role)) {
       return res.status(403).json({
         status: 403,
-        message: `User role '${user.role}' does not have permission to access this resource`,
+        message: `User role '${user?.role}' does not have permission to access this resource`,
       });
     }
 

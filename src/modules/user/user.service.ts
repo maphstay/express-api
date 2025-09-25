@@ -48,7 +48,7 @@ export class UserService implements IUserService {
     return user;
   }
 
-  public getUsersPaginated(page: number = 1, limit: number = 10): IPaginatedResponse<typeof User> {
+  public getUsersPaginated(page: number, limit: number): IPaginatedResponse<typeof User> {
     const allLatest = this.repository.getAll();
     const total = allLatest.length;
     const start = (page - 1) * limit;

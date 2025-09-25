@@ -50,7 +50,7 @@ export class ResourceService implements IResourceService {
     return resource;
   }
 
-  public getResourcesPaginated(page: number = 1, limit: number = 10): IPaginatedResponse<typeof Resource> {
+  public getResourcesPaginated(page: number, limit: number): IPaginatedResponse<typeof Resource> {
     const allLatest = this.repository.getAll();
     const total = allLatest.length;
     const start = (page - 1) * limit;

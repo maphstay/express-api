@@ -62,8 +62,8 @@ export class ResourceController implements IResourceController {
 
   getPaginated = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const page = Number(req.query.page as string);
-      const limit = Number(req.query.limit as string);
+      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
       const result = this.service.getResourcesPaginated(page, limit);
       return res.json(result);
     } catch (err) {

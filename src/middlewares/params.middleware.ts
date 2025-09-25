@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 
-const paramSchemas: Record<string, z.ZodTypeAny> = {
+export const paramSchemas: Record<string, z.ZodTypeAny> = {
   id: z.uuid({ message: 'ID must be a valid UUID' }),
   topicId: z.uuid({ message: 'TopicId must be a valid UUID' }),
   page: z.string().regex(/^\d+$/, 'Page must be a number').default('1'),

@@ -270,6 +270,10 @@ export const setupSwagger = (app: Express) => {
           tags: ['Topics'],
           summary: 'Get the shortest path between topics',
           security: [{ bearerAuth: [] }],
+          parameters: [
+            z.uuid().meta({ param: { name: 'from', in: 'query', description: 'Topic ID from' } }),
+            z.uuid().meta({ param: { name: 'to', in: 'query', description: 'Topic ID to' } }),
+          ],
           responses: {
             200: {
               description: 'List of topic versions',

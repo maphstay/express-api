@@ -41,7 +41,7 @@ export class TopicService implements ITopicService {
 
   public getTopic(topicId: string, version?: number): ITopicVersion | ITreeNode {
     const topicVersions = this.repository.findByTopicId(topicId);
-    if (!topicVersions.length)
+    if (!topicVersions?.length)
       return this.errorHandler.notFoundException(`Topic with ID: ${topicId} not found`, {
         serviceName: TopicService.name,
         serviceMethod: this.getTopic.name,
@@ -60,7 +60,7 @@ export class TopicService implements ITopicService {
     const latestMap = new Map<string, ITopicVersion>();
     this.repository.getAll().forEach((tv) => {
       const cur = latestMap.get(tv.topicId);
-      if (!cur || tv.version > cur.version) latestMap.set(tv.topicId, tv);
+      if (!cur || tv.version > cur.version) return latestMap.set(tv.topicId, tv);
     });
 
     const buildNode = (tid: string): ITreeNode | null => {
@@ -85,7 +85,7 @@ export class TopicService implements ITopicService {
     return root;
   }
 
-  public getTopicsPaginated(page: number = 1, limit: number = 10): IPaginatedResponse<typeof TopicVersion> {
+  public getTopicsPaginated(page: number, limit: number): IPaginatedResponse<typeof TopicVersion> {
     const allLatest = this.repository.findLatestVersions();
     const total = allLatest.length;
     const start = (page - 1) * limit;
