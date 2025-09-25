@@ -1,13 +1,12 @@
 import { ICreateTopicDto } from '../dto/createTopic.dto';
 import { IUpdateTopicDto } from '../dto/updateTopic.dto';
-import { TopicVersion } from '../topic.entity';
+import { ITopicVersion } from '../topic.entity';
 
 export abstract class ITopicRepository {
-  abstract getAll(): TopicVersion[];
-  abstract saveAll(topicVersions: TopicVersion[]): void;
-  abstract add(createTopicDto: ICreateTopicDto): TopicVersion;
-  abstract update(latestTopic: TopicVersion, updateTopicDto: IUpdateTopicDto): TopicVersion;
-  abstract findByTopicId(topicId: string): TopicVersion[];
-  abstract findLatestVersions(): TopicVersion[];
+  abstract getAll(): ITopicVersion[];
+  abstract add(createTopicDto: ICreateTopicDto): ITopicVersion;
+  abstract update(latestTopic: ITopicVersion, updateTopicDto: IUpdateTopicDto): ITopicVersion;
+  abstract findByTopicId(topicId: string): ITopicVersion[];
+  abstract findLatestVersions(): ITopicVersion[];
   abstract deleteByIds(ids: Set<string>): void;
 }

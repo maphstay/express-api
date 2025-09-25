@@ -1,13 +1,15 @@
-import { TopicVersion } from '@modules/topic/topic.entity';
+import { IResource } from '@modules/resource/resource.entity';
+import { ITopicVersion } from '@modules/topic/topic.entity';
+import { IUser } from '@modules/user/user.entity';
 import fs from 'fs';
 import path from 'path';
 
 const DB_PATH = path.join(__dirname, '../../data-db.json');
 
 export type DBData = {
-  users: any[];
-  resources: any[];
-  topicVersions: TopicVersion[];
+  users: IUser[];
+  resources: IResource[];
+  topicVersions: ITopicVersion[];
 };
 
 const defaultData: DBData = { users: [], resources: [], topicVersions: [] };

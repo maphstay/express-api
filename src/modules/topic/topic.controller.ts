@@ -1,29 +1,29 @@
 import { Request, Response, NextFunction } from 'express';
 import { ITopicController } from './interfaces/topic.controller';
 import { ITopicService } from './interfaces/topic.service';
-import { ErrorHandlingService } from '@errors/errorHandling.service';
+import { CreateTopicDto } from './dto/createTopic.dto';
+import { UpdateTopicDto } from './dto/updateTopic.dto';
+import { IErrorHandlingService } from '@errors/interfaces/errorHandling.service';
 
 export class TopicController implements ITopicController {
   constructor(
     private service: ITopicService,
-    private errorHandler: ErrorHandlingService,
+    private errorHandler: IErrorHandlingService,
   ) {}
 
   create = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { name, content, parentTopicId } = req.body;
-      if (!name)
-        return this.errorHandler.badRequestException('name required', {
-          serviceName: TopicController.name,
-          serviceMethod: 'create',
-        });
-      if (!content)
-        return this.errorHandler.badRequestException('content required', {
-          serviceName: TopicController.name,
-          serviceMethod: 'create',
-        });
+      const parseResult = CreateTopicDto.safeParse(req.body);
 
-      const topic = this.service.createTopic({ name, content, parentTopicId });
+      if (!parseResult.success) {
+        const errorMessages = parseResult.error.issues.map((e) => e.message).join(', ');
+        return this.errorHandler.badRequestException(errorMessages, {
+          serviceName: TopicController.name,
+          serviceMethod: 'create',
+        });
+      }
+
+      const topic = this.service.createTopic(parseResult.data);
       return res.status(201).json(topic);
     } catch (err) {
       next(err);
@@ -33,8 +33,17 @@ export class TopicController implements ITopicController {
   update = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const { name, content, parentTopicId } = req.body;
-      const topic = this.service.updateTopic(id, { name, content, parentTopicId });
+      const parseResult = UpdateTopicDto.safeParse(req.body);
+
+      if (!parseResult.success) {
+        const errorMessages = parseResult.error.issues.map((e) => e.message).join(', ');
+        return this.errorHandler.badRequestException(errorMessages, {
+          serviceName: TopicController.name,
+          serviceMethod: 'update',
+        });
+      }
+
+      const topic = this.service.updateTopic(id, parseResult.data);
       return res.json(topic);
     } catch (err) {
       next(err);
@@ -76,11 +85,6 @@ export class TopicController implements ITopicController {
   shortestPath = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { from, to } = req.query;
-      if (!from || !to)
-        return this.errorHandler.badRequestException('from and to required', {
-          serviceName: TopicController.name,
-          serviceMethod: 'shortestPath',
-        });
 
       const path = this.service.shortestPath(String(from), String(to));
       return res.json({ path });

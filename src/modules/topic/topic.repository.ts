@@ -1,27 +1,21 @@
 import { v4 as uuid } from 'uuid';
 import { ITopicRepository } from './interfaces/topic.repository';
-import { TopicVersion } from './topic.entity';
+import { ITopicVersion } from './topic.entity';
 import { readDB, writeDB } from '@database/jsonDb';
 import { ICreateTopicDto } from './dto/createTopic.dto';
 import { now } from '@utils/nowGenerateDate';
 import { IUpdateTopicDto } from './dto/updateTopic.dto';
 
 export class TopicRepository implements ITopicRepository {
-  getAll(): TopicVersion[] {
+  public getAll(): ITopicVersion[] {
     const db = readDB();
     return [...db.topicVersions];
   }
 
-  saveAll(topicVersions: TopicVersion[]) {
-    const db = readDB();
-    db.topicVersions = topicVersions;
-    writeDB(db);
-  }
-
-  add(createTopicDto: ICreateTopicDto): TopicVersion {
+  public add(createTopicDto: ICreateTopicDto): ITopicVersion {
     const db = readDB();
     const logicalId = uuid();
-    const createdVersionObj: TopicVersion = {
+    const createdVersionObj: ITopicVersion = {
       id: uuid(),
       topicId: logicalId,
       name: createTopicDto.name,
@@ -36,9 +30,9 @@ export class TopicRepository implements ITopicRepository {
     return createdVersionObj;
   }
 
-  update(latestTopic: TopicVersion, updateTopicDto: IUpdateTopicDto): TopicVersion {
+  public update(latestTopic: ITopicVersion, updateTopicDto: IUpdateTopicDto): ITopicVersion {
     const db = readDB();
-    const updatedVersion: TopicVersion = {
+    const updatedVersion: ITopicVersion = {
       id: uuid(),
       topicId: latestTopic.topicId,
       name: updateTopicDto.name ?? latestTopic.name,
@@ -53,14 +47,14 @@ export class TopicRepository implements ITopicRepository {
     return updatedVersion;
   }
 
-  findByTopicId(topicId: string): TopicVersion[] {
+  public findByTopicId(topicId: string): ITopicVersion[] {
     const db = readDB();
     return db.topicVersions.filter((tv) => tv.topicId === topicId);
   }
 
-  findLatestVersions(): TopicVersion[] {
+  public findLatestVersions(): ITopicVersion[] {
     const db = readDB();
-    const map = new Map<string, TopicVersion>();
+    const map = new Map<string, ITopicVersion>();
     db.topicVersions.forEach((tv) => {
       const cur = map.get(tv.topicId);
       if (!cur || tv.version > cur.version) map.set(tv.topicId, tv);
@@ -68,7 +62,7 @@ export class TopicRepository implements ITopicRepository {
     return Array.from(map.values());
   }
 
-  deleteByIds(ids: Set<string>) {
+  public deleteByIds(ids: Set<string>): void {
     const db = readDB();
     db.topicVersions = db.topicVersions.filter((tv) => !ids.has(tv.topicId));
     writeDB(db);

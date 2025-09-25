@@ -1,3 +1,6 @@
-import { ICreateTopicDto } from './createTopic.dto';
+import { z } from 'zod';
+import { CreateTopicDto } from './createTopic.dto';
 
-export interface IUpdateTopicDto extends Partial<Omit<ICreateTopicDto, 'parentTopicId'>> {}
+export const UpdateTopicDto = CreateTopicDto.omit({ parentTopicId: true }).partial();
+
+export type IUpdateTopicDto = z.infer<typeof UpdateTopicDto>;

@@ -1,17 +1,20 @@
-import { TopicVersion } from './topic.entity';
+import { ITopicVersion, ITreeNode, TopicVersion } from './topic.entity';
 import { ITopicRepository } from './interfaces/topic.repository';
 import { ITopicService } from './interfaces/topic.service';
 import { ICreateTopicDto } from './dto/createTopic.dto';
 import { IUpdateTopicDto } from './dto/updateTopic.dto';
 import { IErrorHandlingService } from '@errors/interfaces/errorHandling.service';
+import { IResourceRepository } from '@modules/resource/interfaces/resource.repository';
+import { IPaginatedResponse } from '@bases/paginated';
 
 export class TopicService implements ITopicService {
   constructor(
     private repository: ITopicRepository,
+    private resourceRepository: IResourceRepository,
     private errorHandler: IErrorHandlingService,
   ) {}
 
-  createTopic(createTopicDto: ICreateTopicDto): TopicVersion {
+  public createTopic(createTopicDto: ICreateTopicDto): ITopicVersion {
     if (createTopicDto.parentTopicId) {
       const parentTopic = this.repository.findByTopicId(createTopicDto.parentTopicId);
       if (!parentTopic.length)
@@ -23,7 +26,7 @@ export class TopicService implements ITopicService {
     return this.repository.add(createTopicDto);
   }
 
-  updateTopic(topicId: string, updateTopicDto: IUpdateTopicDto) {
+  public updateTopic(topicId: string, updateTopicDto: IUpdateTopicDto): ITopicVersion {
     const versions = this.repository.findByTopicId(topicId);
     if (!versions.length)
       return this.errorHandler.notFoundException(`Topic with ID: ${topicId} not found`, {
@@ -36,16 +39,16 @@ export class TopicService implements ITopicService {
     return this.repository.update(latestTopic, updateTopicDto);
   }
 
-  getTopic(topicId: string, version?: number) {
-    const versions = this.repository.findByTopicId(topicId);
-    if (!versions.length)
+  public getTopic(topicId: string, version?: number): ITopicVersion | ITreeNode {
+    const topicVersions = this.repository.findByTopicId(topicId);
+    if (!topicVersions?.length)
       return this.errorHandler.notFoundException(`Topic with ID: ${topicId} not found`, {
         serviceName: TopicService.name,
         serviceMethod: this.getTopic.name,
       });
 
     if (version) {
-      const v = versions.find((tv) => tv.version === version);
+      const v = topicVersions.find((tv) => tv.version === version);
       if (!v)
         return this.errorHandler.notFoundException(`Topic with version: ${version} not found`, {
           serviceName: TopicService.name,
@@ -54,22 +57,23 @@ export class TopicService implements ITopicService {
       return v;
     }
 
-    const latestMap = new Map<string, TopicVersion>();
+    const latestMap = new Map<string, ITopicVersion>();
     this.repository.getAll().forEach((tv) => {
       const cur = latestMap.get(tv.topicId);
-      if (!cur || tv.version > cur.version) latestMap.set(tv.topicId, tv);
+      if (!cur || tv.version > cur.version) return latestMap.set(tv.topicId, tv);
     });
 
-    const buildNode = (tid: string): (TopicVersion & { children: any[] }) | null => {
+    const buildNode = (tid: string): ITreeNode | null => {
       const tv = latestMap.get(tid);
       if (!tv) return null;
 
       const children = Array.from(latestMap.values())
         .filter((ch) => ch.parentTopicId === tid)
         .map((ch) => buildNode(ch.topicId))
-        .filter((c): c is TopicVersion & { children: any[] } => c !== null);
+        .filter((c): c is ITreeNode => c !== null);
 
-      return { ...tv, children };
+      const resource = this.resourceRepository.findByTopicId(tid);
+      return { ...tv, children, resource: resource || null };
     };
 
     const root = buildNode(topicId);
@@ -81,7 +85,7 @@ export class TopicService implements ITopicService {
     return root;
   }
 
-  getTopicsPaginated(page: number = 1, limit: number = 10) {
+  public getTopicsPaginated(page: number, limit: number): IPaginatedResponse<typeof TopicVersion> {
     const allLatest = this.repository.findLatestVersions();
     const total = allLatest.length;
     const start = (page - 1) * limit;
@@ -94,7 +98,7 @@ export class TopicService implements ITopicService {
     };
   }
 
-  deleteTopic(topicId: string) {
+  public deleteTopic(topicId: string): { deleted: number } {
     const allVersions = this.repository.getAll();
     const idsToDelete = new Set<string>();
     const queue = [topicId];
@@ -110,13 +114,18 @@ export class TopicService implements ITopicService {
       );
     }
 
-    const beforeCount = allVersions.length;
+    let deletedResources = 0;
+
     this.repository.deleteByIds(idsToDelete);
 
-    return { deleted: beforeCount - this.repository.getAll().length };
+    idsToDelete.forEach((id) => {
+      deletedResources += this.resourceRepository.deleteByTopicId(id);
+    });
+
+    return { deleted: deletedResources };
   }
 
-  shortestPath(fromTopicId: string, toTopicId: string): string[] {
+  public shortestPath(fromTopicId: string, toTopicId: string): string[] {
     if (fromTopicId === toTopicId) return [fromTopicId];
 
     const nodes = this.repository.findLatestVersions();
@@ -162,7 +171,7 @@ export class TopicService implements ITopicService {
     return [];
   }
 
-  listVersions(topicId: string) {
+  public listVersions(topicId: string): ITopicVersion[] {
     return this.repository.findByTopicId(topicId).sort((a, b) => a.version - b.version);
   }
 }
